@@ -23,6 +23,7 @@ share {
     push @PKG_CONFIG_PATH, Alien::zix->pkg_config_path;
   } or warn "Unable to add to \$PKG_CONFIG_PATH (@PKG_CONFIG_PATH): $@";
 
+  meta->prop->{destdir} = 1;
   my $build_dir = '_build';
   build [
     sub {
