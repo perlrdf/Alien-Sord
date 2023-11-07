@@ -1,5 +1,8 @@
 use alienfile;
 
+use Env qw(@PKG_CONFIG_PATH);
+requires 'Alien::zix';
+
 plugin PkgConfig => 'sord-0';
 
 share {
@@ -14,6 +17,11 @@ share {
   );
 
   plugin Extract => 'tar.gz';
+
+  eval {
+    require Alien::zix;
+    push @PKG_CONFIG_PATH, Alien::zix->pkg_config_path;
+  } or warn "Unable to add to \$PKG_CONFIG_PATH (@PKG_CONFIG_PATH): $@";
 
   my $build_dir = '_build';
   build [
