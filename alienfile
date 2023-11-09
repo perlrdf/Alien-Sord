@@ -2,6 +2,7 @@ use alienfile;
 
 use Env qw(@PKG_CONFIG_PATH);
 requires 'Alien::zix';
+requires 'Alien::Serd';
 
 plugin PkgConfig => 'sord-0';
 
@@ -25,7 +26,9 @@ share {
 
   eval {
     require Alien::zix;
-    push @PKG_CONFIG_PATH, Alien::zix->pkg_config_path;
+    require Alien::Serd;
+    push @PKG_CONFIG_PATH, map { $_->pkg_config_path }
+      qw(Alien::zix Alien::Serd);
   } or warn "Unable to add to \$PKG_CONFIG_PATH (@PKG_CONFIG_PATH): $@";
 
   meta->prop->{destdir} = 1;
