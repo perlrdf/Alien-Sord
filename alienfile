@@ -1,13 +1,22 @@
 use alienfile;
 
+use Env qw(@PKG_CONFIG_PATH);
+requires 'Alien::zix';
+requires 'Alien::Serd';
+
 plugin PkgConfig => 'sord-0';
 
+eval {
+  require Alien::Meson;
+  Alien::Meson->_apply_destdir_prefix_hack;
+};
+
 share {
-  requires 'Alien::Build::Plugin::Gather::Dino';
   requires 'Alien::Build::Plugin::Download::GitLab';
-  requires 'Alien::Meson';
+  requires 'Alien::Meson' => '0.06';
   requires 'Alien::Ninja';
 
+  # https://gitlab.com/drobilla/sord
   plugin 'Download::GitLab' => (
     gitlab_user    => 'drobilla',
     gitlab_project => 'sord',
@@ -15,17 +24,34 @@ share {
 
   plugin Extract => 'tar.gz';
 
+  eval {
+    require Alien::zix;
+    require Alien::Serd;
+    push @PKG_CONFIG_PATH, map { $_->pkg_config_path }
+      qw(Alien::zix Alien::Serd);
+  } or warn "Unable to add to \$PKG_CONFIG_PATH (@PKG_CONFIG_PATH): $@";
+
+  meta->prop->{destdir} = 1;
   my $build_dir = '_build';
   build [
-    [ '%{meson}', 'setup',
-      '--prefix=%{.install.prefix}',
-      '--libdir=lib',
-      '--buildtype=release',
-      '-Ddocs=disabled', # no docs
-      $build_dir ],
-    [ '%{ninja}', qw(-C), $build_dir, "test" ],
-    [ '%{ninja}', qw(-C), $build_dir, 'install' ],
+    map {
+      my  $linkage = $_; (
+      sub {
+        my $build = shift;
+        Alien::Build::CommandSequence->new([
+          Alien::Meson->exe, 'setup',
+            "-Ddefault_library=$linkage",
+            '--prefix=%{.install.prefix}',
+            '--libdir=lib',
+            '--buildtype=release',
+            '-Ddocs=disabled', # no docs
+            "${build_dir}_$linkage",
+        ])->execute($build);
+      },
+      [ '%{ninja}', qw(-C), "${build_dir}_$linkage", "test" ],
+      [ '%{ninja}', qw(-C), "${build_dir}_$linkage", 'install' ],
+    ) } qw(shared static)
   ];
 
-  plugin 'Gather::Dino';
+  plugin 'Gather::IsolateDynamic';
 }
