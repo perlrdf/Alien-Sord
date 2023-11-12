@@ -34,40 +34,24 @@ share {
   meta->prop->{destdir} = 1;
   my $build_dir = '_build';
   build [
-    sub {
-      my $build = shift;
-      Alien::Build::CommandSequence->new([
-        Alien::Meson->exe, 'setup',
-          '-Ddefault_library=static',
-          '--prefix=%{.install.prefix}',
-          '--libdir=lib',
-          '--buildtype=release',
-          '-Ddocs=disabled', # no docs
-          $build_dir,
-      ])->execute($build);
-    },
-    [ '%{ninja}', qw(-C), $build_dir, "test" ],
-    [ '%{ninja}', qw(-C), $build_dir, 'install' ],
-  ];
-
-  ffi {
-    build [
+    map {
+      my  $linkage = $_; (
       sub {
         my $build = shift;
         Alien::Build::CommandSequence->new([
           Alien::Meson->exe, 'setup',
-            '-Ddefault_library=shared',
+            "-Ddefault_library=$linkage",
             '--prefix=%{.install.prefix}',
             '--libdir=lib',
             '--buildtype=release',
             '-Ddocs=disabled', # no docs
-            $build_dir,
+            "${build_dir}_$linkage",
         ])->execute($build);
       },
-      [ '%{ninja}', qw(-C), $build_dir, "test" ],
-      [ '%{ninja}', qw(-C), $build_dir, 'install' ],
-    ];
-  };
+      [ '%{ninja}', qw(-C), "${build_dir}_$linkage", "test" ],
+      [ '%{ninja}', qw(-C), "${build_dir}_$linkage", 'install' ],
+    ) } qw(shared static)
+  ];
 
   plugin 'Gather::IsolateDynamic';
 }
