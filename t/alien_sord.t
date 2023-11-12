@@ -2,16 +2,16 @@ use Test2::V0;
 use Test::Alien;
 use Test::Alien::Diag;
 use Alien::Sord;
+use File::Which;
 
 alien_diag 'Alien::Sord';
 alien_ok 'Alien::Sord';
 
-# NOTE Disable tool for now
-#if( which 'sordi' ) {
-#  run_ok([ qw(sordi --version) ])
-#    ->success
-#    ->out_like(qr/sordi\s+([0-9.]+)/);
-#}
+if( which 'sordi' ) {
+  run_ok([ qw(sordi -v) ])
+    ->success
+    ->out_like(qr/sordi\s+([0-9.]+)/);
+}
 
 my $xs = <<'END';
 #include "EXTERN.h"
