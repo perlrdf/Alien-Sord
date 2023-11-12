@@ -17,6 +17,7 @@ share {
   requires 'Alien::Ninja';
 
   # https://gitlab.com/drobilla/sord
+  # https://drobilla.net/software/sord.html
   plugin 'Download::GitLab' => (
     gitlab_user    => 'drobilla',
     gitlab_project => 'sord',
